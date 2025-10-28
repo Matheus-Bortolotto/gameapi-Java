@@ -14,18 +14,22 @@ public class SecurityConfigDev {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // pra API local, não precisamos de CSRF/formulário
+                // não precisa CSRF no dev
                 .csrf(csrf -> csrf.disable())
 
-                // LIBERA TUDO no ambiente dev
+                // libera tudo MESMO (Swagger, controllers, h2-console etc)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()
                 )
 
-                // define httpBasic só pra satisfazer o Spring Security
+                // permite usar frames/iframes (senão o H2 quebra)
+                .headers(headers ->
+                        headers.frameOptions(frame -> frame.sameOrigin())
+                )
+
+                // httpBasic só pra calar o warning do Spring Security
                 .httpBasic(Customizer.withDefaults());
 
-        // não tem formLogin(), então /login não existe mais (404 é esperado se você tentar abrir /login)
         return http.build();
     }
 }
