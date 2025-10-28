@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Games</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: .5rem .75rem; text-align: left; }
+        th { background: #eee; }
+        h1 { margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+<h1>Lista de Games</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Editora</th>
+        <th>Gênero</th>
+        <th>Ano</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="g : ${games}">
+        <td th:text="${g.id}">1</td>
+        <td th:text="${g.titulo}">The Legend of Zelda</td>
+        <td th:text="${g.editora}">Nintendo</td>
+        <td th:text="${g.genero}">Aventura</td>
+        <td th:text="${g.anoLancamento}">1986</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

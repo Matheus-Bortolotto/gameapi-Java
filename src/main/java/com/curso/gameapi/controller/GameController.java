@@ -1,10 +1,8 @@
 package com.curso.gameapi.controller;
 
-import com.curso.gameapi.dto.GameMapper;
 import com.curso.gameapi.dto.GameRequest;
 import com.curso.gameapi.dto.GameResponse;
-import com.curso.gameapi.models.Game;
-import com.curso.gameapi.repository.GameRepository;
+import com.curso.gameapi.service.GameService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,62 +12,48 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 @RestController
 @RequestMapping("/api/games")
 @Tag(name = "Games", description = "CRUD de Games")
 public class GameController {
 
-    private final GameRepository repository;
+    private final GameService service;
 
-    public GameController(GameRepository repository) {
-        this.repository = repository;
+    public GameController(GameService service) {
+        this.service = service;
     }
 
     @Operation(summary = "Lista todos os games")
     @GetMapping
     public List<GameResponse> list() {
-        return repository.findAll().stream()
-                .map(GameMapper::toResponse)
-                .collect(toList());
+        return service.listAll();
     }
 
     @Operation(summary = "Busca game por id")
     @GetMapping("/{id}")
     public ResponseEntity<GameResponse> get(@PathVariable Integer id) {
-        return repository.findById(id)
-                .map(GameMapper::toResponse)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(service.getById(id));
     }
 
     @Operation(summary = "Cria um novo game")
     @PostMapping
     public ResponseEntity<GameResponse> create(@Valid @RequestBody GameRequest request) {
-        Game saved = repository.save(GameMapper.toEntity(request));
-        URI location = URI.create("/api/games/" + saved.getIdGame());
-        return ResponseEntity.created(location).body(GameMapper.toResponse(saved));
+        GameResponse created = service.create(request);
+        URI location = URI.create("/api/games/" + created.id());
+        return ResponseEntity.created(location).body(created);
     }
 
     @Operation(summary = "Atualiza um game")
     @PutMapping("/{id}")
-    public ResponseEntity<GameResponse> update(@PathVariable Integer id, @Valid @RequestBody GameRequest request) {
-        return repository.findById(id)
-                .map(existing -> {
-                    Game updated = GameMapper.toEntity(request);
-                    updated.setIdGame(existing.getIdGame());
-                    Game saved = repository.save(updated);
-                    return ResponseEntity.ok(GameMapper.toResponse(saved));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<GameResponse> update(@PathVariable Integer id,
+                                               @Valid @RequestBody GameRequest request) {
+        return ResponseEntity.ok(service.update(id, request));
     }
 
     @Operation(summary = "Exclui um game")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        if (!repository.existsById(id)) return ResponseEntity.notFound().build();
-        repository.deleteById(id);
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }
