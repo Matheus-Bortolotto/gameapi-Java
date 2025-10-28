@@ -19,23 +19,19 @@ import java.util.function.Function;
 public class JwtService {
 
     @Value("${jwt.secret}")
-    private String secretBase64; // tem que ser Base64 no application-*.properties
+    private String secretBase64;
 
     @Value("${jwt.expiration}")
-    private long expirationMs; // milissegundos
+    private long expirationMs;
 
     private SecretKey signingKey;
 
     @PostConstruct
     void initKey() {
-        // converte a string Base64 em chave HMAC
         byte[] keyBytes = Decoders.BASE64.decode(secretBase64);
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // ================= PUBLIC =================
-
-    // gera um token pro usuário autenticado
     public String generateToken(UserDetails userDetails) {
         String role = userDetails.getAuthorities()
                 .stream()
@@ -43,34 +39,27 @@ public class JwtService {
                 .findFirst()
                 .orElse("USER");
 
-        return buildToken(
-                Map.of("role", role),
-                userDetails.getUsername()
-        );
+        return buildToken(Map.of("role", role), userDetails.getUsername());
     }
 
-    // lê o "sub" (username) de dentro do token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    // valida usuário + expiração
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
-    // ================= HELPERS =================
-
     private String buildToken(Map<String, Object> extraClaims, String subject) {
         long now = System.currentTimeMillis();
 
         return Jwts.builder()
-                .claims(extraClaims)                          // nossas claims extras
-                .subject(subject)                             // sub
-                .issuedAt(new Date(now))                      // iat
-                .expiration(new Date(now + expirationMs))     // exp
-                .signWith(signingKey)                         // HS256
+                .claims(extraClaims)
+                .subject(subject)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + expirationMs))
+                .signWith(signingKey)
                 .compact();
     }
 
@@ -84,11 +73,10 @@ public class JwtService {
         return resolver.apply(claims);
     }
 
-    // faz o parse + verificação da assinatura e devolve o corpo
     private Claims extractAllClaims(String token) {
         return Jwts
                 .parser()
-                .verifyWith(signingKey)  // verifica assinatura com a mesma chave secreta
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

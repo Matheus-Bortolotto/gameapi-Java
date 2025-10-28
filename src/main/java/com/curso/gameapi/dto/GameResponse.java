@@ -1,9 +1,9 @@
 package com.curso.gameapi.dto;
 
-public class GameResponse {
-    private Long id;
-    private String title;
-    private String genre;
-
-    // getters e setters
-}
+public record GameResponse(
+        Integer id,
+        String titulo,
+        String editora,
+        String genero,
+        Integer anoLancamento
+) { }

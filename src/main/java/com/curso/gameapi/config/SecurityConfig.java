@@ -21,23 +21,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@Profile("prod") // só ativa essa config quando o profile ativo for "prod"
+@Profile("prod")
 public class SecurityConfig {
 
-    // 1) Cadeia de filtros HTTP + autorização
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthFilter jwtAuthFilter,
                                                    AuthenticationProvider authenticationProvider) throws Exception {
-
         http
-                // nossa API é stateless com JWT
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sess ->
-                        sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // libera autenticação e swagger sem token
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/auth/**",
@@ -48,20 +41,13 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-
-                // permitir H2 console em iframe (só pra facilitar teste)
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
-
-                // provider que sabe validar username/senha
                 .authenticationProvider(authenticationProvider)
-
-                // filtro JWT antes do filtro padrão de usuário/senha
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // 2) Usuários em memória (só pra teste /auth/login)
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
         return new InMemoryUserDetailsManager(
@@ -76,29 +62,22 @@ public class SecurityConfig {
         );
     }
 
-    // 3) BCrypt pra senha
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 4) Provider que autentica usando UserDetailsService + PasswordEncoder
     @Bean
-    public AuthenticationProvider authenticationProvider(
-            UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder
-    ) {
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService,
+                                                         PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
-    // 5) AuthenticationManager usado pelo AuthController pra fazer login
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationProvider authenticationProvider
-    ) {
+    public AuthenticationManager authenticationManager(AuthenticationProvider authenticationProvider) {
         return new ProviderManager(authenticationProvider);
     }
 }
